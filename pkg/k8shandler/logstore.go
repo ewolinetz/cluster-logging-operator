@@ -1,8 +1,8 @@
 package k8shandler
 
 import (
+	"fmt"
 	"github.com/openshift/elasticsearch-operator/pkg/apis/elasticsearch/v1alpha1"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/openshift/cluster-logging-operator/pkg/utils"
@@ -36,7 +36,7 @@ func createOrUpdateElasticsearchSecret(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(esSecret)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure constructing Elasticsearch secret: %v", err)
+		return fmt.Errorf("Failure constructing Elasticsearch secret: %v", err)
 	}
 
 	return nil
@@ -101,21 +101,21 @@ func createOrUpdateElasticsearchCR(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(esCR)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Elasticsearch CR: %v", err)
+			return fmt.Errorf("Failure creating Elasticsearch CR: %v", err)
 		}
 	} else {
 		esCR := getElasticsearchCR(logging, "elasticsearch-app")
 
 		err := sdk.Create(esCR)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Elasticsearch CR: %v", err)
+			return fmt.Errorf("Failure creating Elasticsearch CR: %v", err)
 		}
 
 		esInfraCR := getElasticsearchCR(logging, "elasticsearch-infra")
 
 		err = sdk.Create(esInfraCR)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Elasticsearch Infra CR: %v", err)
+			return fmt.Errorf("Failure creating Elasticsearch Infra CR: %v", err)
 		}
 	} /*else if errors.IsAlreadyExists(err) {
 	  // Get existing configMap to check if it is same as what we want

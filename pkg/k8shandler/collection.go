@@ -1,8 +1,8 @@
 package k8shandler
 
 import (
+	"fmt"
 	"github.com/openshift/cluster-logging-operator/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -11,11 +11,25 @@ import (
 )
 
 func CreateOrUpdateCollection(logging *logging.ClusterLogging) error {
-	createOrUpdateFluentdServiceAccount(logging)
+	err := createOrUpdateFluentdServiceAccount(logging)
+	if err != nil {
+		return err
+	}
 
-	createOrUpdateCollectionPriorityClass(logging)
-	createOrUpdateFluentdConfigMap(logging)
-	createOrUpdateFluentdDaemonset(logging)
+	err = createOrUpdateCollectionPriorityClass(logging)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateFluentdConfigMap(logging)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateFluentdDaemonset(logging)
+	if err != nil {
+		return err
+	}
 
 	return createOrUpdateFluentdSecret(logging)
 }
@@ -28,7 +42,7 @@ func createOrUpdateCollectionPriorityClass(logging *logging.ClusterLogging) erro
 
 	err := sdk.Create(collectionPriorityClass)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure creating Collection priority class: %v", err)
+		return fmt.Errorf("Failure creating Collection priority class: %v", err)
 	}
 
 	return nil
@@ -42,7 +56,7 @@ func createOrUpdateFluentdServiceAccount(logging *logging.ClusterLogging) error 
 
 	err := sdk.Create(fluentdServiceAccount)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure creating Fluentd service account: %v", err)
+		return fmt.Errorf("Failure creating Fluentd service account: %v", err)
 	}
 
 	return nil
@@ -64,7 +78,7 @@ func createOrUpdateFluentdConfigMap(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(fluentdConfigMap)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure constructing Fluentd configmap: %v", err)
+		return fmt.Errorf("Failure constructing Fluentd configmap: %v", err)
 	}
 
 	return nil
@@ -88,7 +102,7 @@ func createOrUpdateFluentdSecret(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(fluentdSecret)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure constructing Fluentd secret: %v", err)
+		return fmt.Errorf("Failure constructing Fluentd secret: %v", err)
 	}
 
 	return nil
@@ -110,7 +124,7 @@ func createOrUpdateFluentdDaemonset(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(fluentdDaemonset)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure creating Fluentd Daemonset %v", err)
+		return fmt.Errorf("Failure creating Fluentd Daemonset %v", err)
 	}
 
 	return nil

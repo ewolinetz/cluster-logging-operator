@@ -1,8 +1,8 @@
 package k8shandler
 
 import (
+	"fmt"
 	"github.com/openshift/cluster-logging-operator/pkg/apis/logging/v1alpha1"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"k8s.io/api/core/v1"
 	"os"
@@ -33,13 +33,12 @@ func extractSecretToFile(namespace string, secretName string, key string, toFile
 
 	// check to see if the map value exists
 	if !ok {
-		logrus.Fatalf("No secret data \"%s\" found", key)
-		return nil
+		return fmt.Errorf("No secret data \"%s\" found", key)
 	}
 
 	err = ioutil.WriteFile(path.Join(utils.WORKING_DIR, toFile), value, 0644)
 	if err != nil {
-		logrus.Fatalf("Unable to write to working dir: %v", err)
+		return fmt.Errorf("Unable to write to working dir: %v", err)
 	}
 
 	return nil
@@ -47,16 +46,30 @@ func extractSecretToFile(namespace string, secretName string, key string, toFile
 
 func extractMasterCertificate(namespace string, secretName string) error {
 
-	extractSecretToFile(namespace, secretName, "masterca", "ca.crt")
-	extractSecretToFile(namespace, secretName, "masterkey", "ca.key")
+	err := extractSecretToFile(namespace, secretName, "masterca", "ca.crt")
+	if err != nil {
+		return err
+	}
+
+	err = extractSecretToFile(namespace, secretName, "masterkey", "ca.key")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func extractKibanaInternalCertificate(namespace string, secretName string) error {
 
-	extractSecretToFile(namespace, secretName, "kibanacert", "kibana-internal.crt")
-	extractSecretToFile(namespace, secretName, "kibanakey", "kibana-internal.key")
+	err := extractSecretToFile(namespace, secretName, "kibanacert", "kibana-internal.crt")
+	if err != nil {
+		return err
+	}
+
+	err = extractSecretToFile(namespace, secretName, "kibanakey", "kibana-internal.key")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -66,18 +79,25 @@ func CreateOrUpdateCertificates(logging *v1alpha1.ClusterLogging) error {
 	// Pull master signing cert out from secret in logging.Spec.SecretName
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		logrus.Fatalf("Failed to get watch namespace: %v", err)
+		return fmt.Errorf("Failed to get watch namespace: %v", err)
 	}
 
 	err = extractMasterCertificate(namespace, "logging-master-ca")
+	if err != nil {
+		return err
+	}
+
 	err = extractKibanaInternalCertificate(namespace, "logging-master-ca")
+	if err != nil {
+		return err
+	}
 
 	cmd := exec.Command("bash", "scripts/cert_generation.sh")
 	cmd.Env = append(os.Environ(),
 		"NAMESPACE="+namespace,
 	)
 	if err = cmd.Run(); err != nil {
-		logrus.Fatalf("Error running script: %v", err)
+		return fmt.Errorf("Error running script: %v", err)
 	}
 
 	return nil

@@ -2,8 +2,8 @@ package k8shandler
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/openshift/cluster-logging-operator/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -14,10 +14,26 @@ import (
 )
 
 func CreateOrUpdateVisualization(logging *logging.ClusterLogging) error {
-	createOrUpdateKibanaServiceAccount(logging)
-	createOrUpdateKibanaService(logging)
-	createOrUpdateKibanaRoute(logging)
-	createOrUpdateKibanaDeployment(logging)
+	err := createOrUpdateKibanaServiceAccount(logging)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateKibanaService(logging)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateKibanaRoute(logging)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateKibanaDeployment(logging)
+	if err != nil {
+		return err
+	}
+
 	return createOrUpdateKibanaSecret(logging)
 }
 
@@ -29,7 +45,7 @@ func createOrUpdateKibanaServiceAccount(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(kibanaServiceAccount)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure creating Kibana service account: %v", err)
+		return fmt.Errorf("Failure creating Kibana service account: %v", err)
 	}
 
 	return nil
@@ -45,7 +61,7 @@ func createOrUpdateKibanaDeployment(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaDeployment)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana deployment: %v", err)
+			return fmt.Errorf("Failure creating Kibana deployment: %v", err)
 		}
 	} else {
 		kibanaPodSpec := getKibanaPodSpec(logging, "kibana-app", "elasticsearch-app")
@@ -55,7 +71,7 @@ func createOrUpdateKibanaDeployment(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaDeployment)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana App deployment: %v", err)
+			return fmt.Errorf("Failure creating Kibana App deployment: %v", err)
 		}
 
 		kibanaInfraPodSpec := getKibanaPodSpec(logging, "kibana-infra", "elasticsearch-infra")
@@ -65,7 +81,7 @@ func createOrUpdateKibanaDeployment(logging *logging.ClusterLogging) error {
 
 		err = sdk.Create(kibanaInfraDeployment)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana Infra deployment: %v", err)
+			return fmt.Errorf("Failure creating Kibana Infra deployment: %v", err)
 		}
 	}
 
@@ -86,7 +102,7 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaRoute)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana route: %v", err)
+			return fmt.Errorf("Failure creating Kibana route: %v", err)
 		}
 	} else {
 		kibanaRoute := utils.Route(
@@ -100,7 +116,7 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaRoute)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana App route: %v", err)
+			return fmt.Errorf("Failure creating Kibana App route: %v", err)
 		}
 
 		kibanaInfraRoute := utils.Route(
@@ -114,7 +130,7 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 
 		err = sdk.Create(kibanaInfraRoute)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure creating Kibana Infra route: %v", err)
+			return fmt.Errorf("Failure creating Kibana Infra route: %v", err)
 		}
 	}
 
@@ -139,7 +155,7 @@ func createOrUpdateKibanaService(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaService)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure constructing Kibana service: %v", err)
+			return fmt.Errorf("Failure constructing Kibana service: %v", err)
 		}
 	} else {
 		kibanaService := utils.Service(
@@ -157,7 +173,7 @@ func createOrUpdateKibanaService(logging *logging.ClusterLogging) error {
 
 		err := sdk.Create(kibanaService)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure constructing Kibana App service: %v", err)
+			return fmt.Errorf("Failure constructing Kibana App service: %v", err)
 		}
 
 		kibanaInfraService := utils.Service(
@@ -175,7 +191,7 @@ func createOrUpdateKibanaService(logging *logging.ClusterLogging) error {
 
 		err = sdk.Create(kibanaInfraService)
 		if err != nil && !errors.IsAlreadyExists(err) {
-			logrus.Fatalf("Failure constructing Kibana Infra service: %v", err)
+			return fmt.Errorf("Failure constructing Kibana Infra service: %v", err)
 		}
 	}
 
@@ -197,7 +213,7 @@ func createOrUpdateKibanaSecret(logging *logging.ClusterLogging) error {
 
 	err := sdk.Create(kibanaSecret)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure constructing Kibana secret: %v", err)
+		return fmt.Errorf("Failure constructing Kibana secret: %v", err)
 	}
 
 	proxySecret := utils.Secret(
@@ -214,7 +230,7 @@ func createOrUpdateKibanaSecret(logging *logging.ClusterLogging) error {
 
 	err = sdk.Create(proxySecret)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logrus.Fatalf("Failure constructing Kibana Proxy secret: %v", err)
+		return fmt.Errorf("Failure constructing Kibana Proxy secret: %v", err)
 	}
 
 	return nil
