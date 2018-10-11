@@ -126,7 +126,7 @@ func createOrUpdateElasticsearchCR(logging *logging.ClusterLogging) error {
 	    },
 	    TypeMeta: metav1.TypeMeta{
 	      Kind: "Elasticsearch",
-	      APIVersion: "elasticsearch.redhat.com/v1alpha1",
+	      APIVersion: "logging.openshift.io/v1alpha1",
 	    },
 	  }
 
