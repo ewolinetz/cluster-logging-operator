@@ -188,6 +188,7 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 			logging.Namespace,
 			"kibana",
 			"kibana",
+			"/tmp/_working_dir/ca.crt",
 		)
 
 		utils.AddOwnerRefToObject(kibanaRoute, utils.AsOwner(logging))
@@ -196,12 +197,21 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 		if err != nil && !errors.IsAlreadyExists(err) {
 			return fmt.Errorf("Failure creating Kibana route: %v", err)
 		}
+
+		sharedConfig := createSharedConfig(logging, "https://kibana", "https://kibana")
+		utils.AddOwnerRefToObject(sharedConfig, utils.AsOwner(logging))
+
+		err = sdk.Create(sharedConfig)
+		if err != nil && !errors.IsAlreadyExists(err) {
+			return fmt.Errorf("Failure creating Kibana route shared config: %v", err)
+		}
 	} else {
 		kibanaRoute := utils.Route(
 			"kibana-app",
 			logging.Namespace,
 			"kibana-app",
 			"kibana-app",
+			"/tmp/_working_dir/ca.crt",
 		)
 
 		utils.AddOwnerRefToObject(kibanaRoute, utils.AsOwner(logging))
@@ -216,6 +226,7 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 			logging.Namespace,
 			"kibana-infra",
 			"kibana-infra",
+			"/tmp/_working_dir/ca.crt",
 		)
 
 		utils.AddOwnerRefToObject(kibanaInfraRoute, utils.AsOwner(logging))
@@ -223,6 +234,14 @@ func createOrUpdateKibanaRoute(logging *logging.ClusterLogging) error {
 		err = sdk.Create(kibanaInfraRoute)
 		if err != nil && !errors.IsAlreadyExists(err) {
 			return fmt.Errorf("Failure creating Kibana Infra route: %v", err)
+		}
+
+		sharedConfig := createSharedConfig(logging, "https://kibana-app", "https://kibana-infra")
+		utils.AddOwnerRefToObject(sharedConfig, utils.AsOwner(logging))
+
+		err = sdk.Create(sharedConfig)
+		if err != nil && !errors.IsAlreadyExists(err) {
+			return fmt.Errorf("Failure creating Kibana route shared config: %v", err)
 		}
 	}
 
@@ -487,4 +506,15 @@ func updateCurrentImages(current *apps.Deployment, desired *apps.Deployment) (*a
 	}
 
 	return current
+}
+
+func createSharedConfig(logging *logging.ClusterLogging, kibanaAppURL, kibanaInfraURL string) *v1.ConfigMap {
+	return utils.ConfigMap(
+		"sharing-config",
+		logging.Namespace,
+		map[string]string{
+			"kibanaAppURL":   kibanaAppURL,
+			"kibanaInfraURL": kibanaInfraURL,
+		},
+	)
 }
