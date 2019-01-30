@@ -108,9 +108,7 @@ func getElasticsearchCR(logging *logging.ClusterLogging, elasticsearchName strin
 		Roles:        []v1alpha1.ElasticsearchNodeRole{"client", "data", "master"},
 		NodeCount:    logging.Spec.LogStore.NodeCount,
 		NodeSelector: logging.Spec.LogStore.NodeSelector,
-		Spec: v1alpha1.ElasticsearchNodeSpec{
-			Resources: logging.Spec.LogStore.Resources,
-		},
+		Resources: logging.Spec.LogStore.Resources,
 		Storage: logging.Spec.LogStore.ElasticsearchSpec.Storage,
 	}
 

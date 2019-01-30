@@ -17,7 +17,7 @@ spec:
       serviceAccountName: cluster-logging-operator
       containers:
       - name: cluster-logging-operator
-        image: quay.io/openshift/origin-cluster-logging-operator:latest
+        image: image-registry.openshift-image-registry.svc:5000/openshift/cluster-logging-operator:latest
         imagePullPolicy: IfNotPresent
         command:
         - cluster-logging-operator
@@ -31,7 +31,7 @@ spec:
           - name: ELASTICSEARCH_IMAGE
             value: "docker.io/openshift/origin-logging-elasticsearch5:latest"
           - name: FLUENTD_IMAGE
-            value: "docker.io/openshift/origin-logging-fluentd:latest"
+            value: "image-registry.openshift-image-registry.svc:5000/openshift/logging-fluentd:latest"
           - name: KIBANA_IMAGE
             value: "docker.io/openshift/origin-logging-kibana5:latest"
           - name: CURATOR_IMAGE
